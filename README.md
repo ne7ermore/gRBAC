@@ -2,13 +2,16 @@
 Role-Based Access Control
 
 ### Packages
-```
-go get gopkg.in/mgo.v2
-```
+* [mongo](gopkg.in/mgo.v2)
+
 
 ### Usage
 
+
+```
+// install packge
 > go get github.com/ne7ermore/gRBAC
+```
 
 ```
 import "github.com/ne7ermore/gRBAC/auth"
