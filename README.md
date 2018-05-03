@@ -2,7 +2,7 @@
 Role-Based Access Control
 
 ### Packages
-* [mongo](gopkg.in/mgo.v2)
+* [mongo](https://gopkg.in/mgo.v2)
 
 
 ### Usage
