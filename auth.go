@@ -39,10 +39,18 @@ func CreatePermisson(des string) (*services.Permission, error) {
 }
 
 func GetPerm(id string) (*services.Permission, error) {
+	if !bson.IsObjectIdHex(id) {
+		return nil, common.ErrInvalidMongoId
+	}
+
 	return services.GetPermById(bson.ObjectIdHex(id))
 }
 
 func UpdatePerm(id string, params ...string) (*services.Permission, error) {
+	if !bson.IsObjectIdHex(id) {
+		return nil, common.ErrInvalidMongoId
+	}
+
 	if len(params) == 0 || len(params) > 2 {
 		GetPerm(id)
 	}
@@ -72,10 +80,17 @@ func CreateRole(name string) (*services.Role, error) {
 }
 
 func GetRole(id string) (*services.Role, error) {
+	if !bson.IsObjectIdHex(id) {
+		return nil, common.ErrInvalidMongoId
+	}
 	return services.GetRoleById(bson.ObjectIdHex(id))
 }
 
 func Assign(rid, pid string) (*services.Role, error) {
+	if !bson.IsObjectIdHex(rid) {
+		return nil, common.ErrInvalidMongoId
+	}
+
 	r, err := GetRole(rid)
 	if err != nil {
 		return nil, err
@@ -112,6 +127,10 @@ func Assign(rid, pid string) (*services.Role, error) {
 }
 
 func Revoke(rid, pid string) (*services.Role, error) {
+	if !bson.IsObjectIdHex(rid) {
+		return nil, common.ErrInvalidMongoId
+	}
+
 	r, err := GetRole(rid)
 	if err != nil {
 		return nil, err
@@ -154,6 +173,10 @@ func CreateUser(uid string) (*services.User, error) {
 }
 
 func GetUser(mongoid string) (*services.User, error) {
+	if !bson.IsObjectIdHex(mongoid) {
+		return nil, common.ErrInvalidMongoId
+	}
+
 	return services.GetUserById(bson.ObjectIdHex(mongoid))
 }
 
@@ -162,6 +185,10 @@ func GetUserByUid(uid string) (*services.User, error) {
 }
 
 func AddRole(mongoid, rid string) (*services.User, error) {
+	if !bson.IsObjectIdHex(mongoid) {
+		return nil, common.ErrInvalidMongoId
+	}
+
 	u, err := GetUser(mongoid)
 	if err != nil {
 		return nil, err
@@ -198,6 +225,10 @@ func AddRole(mongoid, rid string) (*services.User, error) {
 }
 
 func DelRole(mongoid, rid string) (*services.User, error) {
+	if !bson.IsObjectIdHex(mongoid) {
+		return nil, common.ErrInvalidMongoId
+	}
+
 	u, err := GetUser(mongoid)
 	if err != nil {
 		return nil, err

@@ -15,6 +15,7 @@ var (
 	ErrUserExist        = errors.New("User existed")
 	ErrUserRoleExist    = errors.New("User Has role")
 	ErrUserNotRoleExist = errors.New("User Has not role")
+	ErrInvalidMongoId   = errors.New("Invalid mongo id")
 )
 
 var (

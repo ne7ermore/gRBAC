@@ -1,11 +1,1 @@
-*.pyc
-*.pt
-word2vec
-img.py
-base_util
 sftp-config.json
-test.py
-example
-ignore*.py
-deep-painterly-harm/experiment.py
-deep-painterly-harm
