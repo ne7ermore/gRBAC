@@ -3,7 +3,7 @@ package services
 import (
 	"testing"
 
-	"git.investsavior.com/nccredit/auth/models"
+	"github.com/ne7ermore/gRBACmodels"
 )
 
 func Test_build(t *testing.T) {

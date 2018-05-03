@@ -6,8 +6,8 @@ import (
 
 	"gopkg.in/mgo.v2/bson"
 
-	"git.investsavior.com/nccredit/auth/common"
-	"git.investsavior.com/nccredit/auth/models"
+	"github.com/ne7ermore/gRBAC/common"
+	"github.com/ne7ermore/gRBAC/models"
 )
 
 type roleMap map[string]interface{}

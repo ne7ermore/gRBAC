@@ -5,9 +5,9 @@ import (
 
 	"gopkg.in/mgo.v2/bson"
 
-	"git.investsavior.com/nccredit/auth/common"
-	"git.investsavior.com/nccredit/auth/models"
-	"git.investsavior.com/nccredit/auth/services"
+	"github.com/ne7ermore/gRBAC/common"
+	"github.com/ne7ermore/gRBAC/models"
+	"github.com/ne7ermore/gRBAC/services"
 )
 
 func init() {

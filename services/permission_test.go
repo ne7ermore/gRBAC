@@ -6,7 +6,7 @@ import (
 
 	"gopkg.in/mgo.v2/bson"
 
-	"git.investsavior.com/nccredit/auth/models"
+	"github.com/ne7ermore/gRBAC/models"
 )
 
 func Test_create(t *testing.T) {
