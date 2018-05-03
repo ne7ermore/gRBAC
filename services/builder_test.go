@@ -3,7 +3,7 @@ package services
 import (
 	"testing"
 
-	"github.com/ne7ermore/gRBACmodels"
+	"github.com/ne7ermore/gRBAC/models"
 )
 
 func Test_build(t *testing.T) {

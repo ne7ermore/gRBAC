@@ -15,19 +15,3 @@ type Permission interface {
 }
 
 type Permissions map[string]Permission
-
-// type StdPermission struct {
-// 	IDStr string
-// }
-
-// func NewStdPermission(id string) Permission {
-// 	return &StdPermission{id}
-// }
-
-// func (p *StdPermission) ID() string {
-// 	return p.IDStr
-// }
-
-// func (p *StdPermission) Match(a Permission) bool {
-// 	return p.IDStr == a.ID()
-// }

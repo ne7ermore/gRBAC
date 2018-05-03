@@ -71,6 +71,17 @@ func GetUserById(id bson.ObjectId) (*User, error) {
 	return NewUserFromModel(mu), nil
 }
 
+func GetUserByUid(uid string) (*User, error) {
+	col := models.NewUserColl()
+	defer col.Database.Session.Close()
+
+	mu := new(models.User)
+	if err := col.Find(bson.M{"user_id": uid}).One(mu); err != nil {
+		return nil, err
+	}
+	return NewUserFromModel(mu), nil
+}
+
 func UpdateUser(id bson.ObjectId, update bson.M) (*User, error) {
 	col := models.NewUserColl()
 	defer col.Database.Session.Close()
@@ -94,15 +105,4 @@ func AddRole(uid, rid string) error {
 
 func DelRole(uid, rid string) error {
 	return common.Get().DelRole(uid, rid)
-}
-
-func GetUserByUid(uid string) (*User, error) {
-	col := models.NewUserColl()
-	defer col.Database.Session.Close()
-
-	mu := new(models.User)
-	if err := col.FindId(id).One(mu); err != nil {
-		return nil, err
-	}
-	return NewUserFromModel(mu), nil
 }

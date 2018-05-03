@@ -157,6 +157,10 @@ func GetUser(mongoid string) (*services.User, error) {
 	return services.GetUserById(bson.ObjectIdHex(mongoid))
 }
 
+func GetUserByUid(uid string) (*services.User, error) {
+	return services.GetUserByUid(uid)
+}
+
 func AddRole(mongoid, rid string) (*services.User, error) {
 	u, err := GetUser(mongoid)
 	if err != nil {
@@ -234,4 +238,15 @@ func DelRole(mongoid, rid string) (*services.User, error) {
 func IsPrmitted(mongoid, pid string) (bool, error) {
 	return common.Get().
 		Permit(mongoid, pid)
+}
+
+func GetAllPerms() common.Permissions {
+	return common.Get().GetAllPerms()
+}
+
+func GetAllRoles() common.Roles {
+	return common.Get().GetAllRoles()
+}
+func GetallUsers() map[string]common.User {
+	return common.Get().GetAllUsers()
 }
