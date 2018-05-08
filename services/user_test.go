@@ -19,4 +19,12 @@ func Test_valid(t *testing.T) {
 	if !bson.IsObjectIdHex(c) {
 		t.Fatal()
 	}
+
+	users, err := GetUsers(0, 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, u := range users {
+		println(u.UserId)
+	}
 }

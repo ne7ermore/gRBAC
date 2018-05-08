@@ -275,10 +275,10 @@ func GetAllPerms(skip, limit int) []*services.Permission {
 	return services.GetPerms(skip, limit)
 }
 
-func GetAllRoles(skip, limit int) []*services.Roles {
+func GetAllRoles(skip, limit int) []*services.Role {
 	return services.GetRoles(skip, limit)
 }
 
-func GetallUsers() map[string]common.User {
-	return common.Get().GetAllUsers()
+func GetallUsers(skip, limit int) []*services.User {
+	return services.GetUsers(skip, limit)
 }

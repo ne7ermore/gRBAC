@@ -24,7 +24,7 @@ func Test_createrole(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	roles, err := GetPerms(1, 5)
+	roles, err := GetRoles(0, 5)
 	if err != nil {
 		t.Fatal(err)
 	}
