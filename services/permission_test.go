@@ -19,4 +19,12 @@ func Test_create(t *testing.T) {
 	updateParams := bson.M{}
 	updateParams["sep"] = "update"
 	UpdatePerm(p.Id, updateParams)
+
+	perms, err := GetPerms(1, 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, p := range perms {
+		println(p.Id)
+	}
 }

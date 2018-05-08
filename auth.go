@@ -278,6 +278,7 @@ func GetAllPerms() common.Permissions {
 func GetAllRoles() common.Roles {
 	return common.Get().GetAllRoles()
 }
+
 func GetallUsers() map[string]common.User {
 	return common.Get().GetAllUsers()
 }

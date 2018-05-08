@@ -79,3 +79,20 @@ func UpdatePerm(id bson.ObjectId, update bson.M) (*Permission, error) {
 	}
 	return GetPermById(id)
 }
+
+func GetPerms(skip, limit int) ([]*Permission, error) {
+	col := models.NewPermissionColl()
+	defer col.Database.Session.Close()
+
+	mp := make([]models.Permission, 0, limit)
+	if err := col.Find(bson.M{}).Limit(limit).Skip(skip).All(&mp); err != nil {
+		return nil, err
+	}
+
+	perms := make([]*Permission, 0, limit)
+	for _, p := range mp {
+		perms = append(perms, NewPermissionFromModel(&p))
+	}
+
+	return perms, nil
+}
