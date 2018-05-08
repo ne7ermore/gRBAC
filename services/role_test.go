@@ -23,4 +23,12 @@ func Test_createrole(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	roles, err := GetPerms(1, 5)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, r := range roles {
+		println(r.Id)
+	}
 }

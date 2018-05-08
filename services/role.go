@@ -117,3 +117,20 @@ func Revoke(rid, pid string) error {
 
 	return auth.Revoke(r, p)
 }
+
+func GetRoles(skip, limit int) ([]*Role, error) {
+	col := models.NewRoleColl()
+	defer col.Database.Session.Close()
+
+	mr := make([]models.Role, 0, limit)
+	if err := col.Find(bson.M{}).Limit(limit).Skip(skip).All(&mr); err != nil {
+		return nil, err
+	}
+
+	roles := make([]*Role, 0, limit)
+	for _, r := range mr {
+		roles = append(roles, NewRoleFromModel(&r))
+	}
+
+	return roles, nil
+}

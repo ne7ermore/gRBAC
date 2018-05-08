@@ -271,12 +271,12 @@ func IsPrmitted(mongoid, pid string) (bool, error) {
 		Permit(mongoid, pid)
 }
 
-func GetAllPerms() common.Permissions {
-	return common.Get().GetAllPerms()
+func GetAllPerms(skip, limit int) []*services.Permission {
+	return services.GetPerms(skip, limit)
 }
 
-func GetAllRoles() common.Roles {
-	return common.Get().GetAllRoles()
+func GetAllRoles(skip, limit int) []*services.Roles {
+	return services.GetRoles(skip, limit)
 }
 
 func GetallUsers() map[string]common.User {
