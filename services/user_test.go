@@ -20,7 +20,7 @@ func Test_valid(t *testing.T) {
 		t.Fatal()
 	}
 
-	users, err := GetUsers(0, 5)
+	users, err := GetUsers(0, 5, "-updateTime")
 	if err != nil {
 		t.Fatal(err)
 	}

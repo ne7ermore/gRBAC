@@ -107,12 +107,12 @@ func DelRole(uid, rid string) error {
 	return common.Get().DelRole(uid, rid)
 }
 
-func GetUsers(skip, limit int) ([]*User, error) {
+func GetUsers(skip, limit int, field string) ([]*User, error) {
 	col := models.NewUserColl()
 	defer col.Database.Session.Close()
 
 	mu := make([]models.User, 0, limit)
-	if err := col.Find(bson.M{}).Limit(limit).Skip(skip).All(&mu); err != nil {
+	if err := col.Find(bson.M{}).Limit(limit).Skip(skip).Sort(field).All(&mu); err != nil {
 		return nil, err
 	}
 
