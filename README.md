@@ -40,4 +40,4 @@ auth.init()
 |IsPrmitted|A user has a permission or not|
 |GetAllPerms|Get all permissions|
 |GetAllRoles|Get all roles|
-|GetallUsers|Get all users|
+|GetAllUsers|Get all users|
