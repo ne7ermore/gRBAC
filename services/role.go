@@ -23,6 +23,11 @@ type Role struct {
 func NewRoleFromModel(m *models.Role) *Role {
 	_map := make(perMap)
 	for _, p := range strings.Split(m.Permissions, common.MongoRoleSep) {
+		// skip empty str while m.Permissions is ""
+		if p == "" {
+			continue
+		}
+
 		if _, found := _map[p]; found {
 			continue
 		}

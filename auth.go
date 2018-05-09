@@ -34,8 +34,8 @@ func init() {
 	}
 }
 
-func CreatePermisson(des string) (*services.Permission, error) {
-	return services.CreatePermisson(des)
+func CreatePermisson(name, des string) (*services.Permission, error) {
+	return services.CreatePermisson(name, des)
 }
 
 func GetPerm(id string) (*services.Permission, error) {
@@ -105,9 +105,11 @@ func Assign(rid, pid string) (*services.Role, error) {
 		return r, common.ErrPermExist
 	}
 
+	var updateParams bson.M
+
 	// for nil Permissions
 	if len(r.Permissions) == 0 {
-		updateParams := bson.M{
+		updateParams = bson.M{
 			"permissions": pid,
 		}
 	} else {
@@ -117,7 +119,7 @@ func Assign(rid, pid string) (*services.Role, error) {
 		}
 		prms = append(prms, pid)
 
-		updateParams := bson.M{
+		updateParams = bson.M{
 			"permissions": strings.Join(prms, common.MongoRoleSep),
 		}
 	}
@@ -152,9 +154,10 @@ func Revoke(rid, pid string) (*services.Role, error) {
 	if _, ok := r.Permissions[pid]; !ok {
 		return r, common.ErrPermNotExist
 	}
+	var updateParams bson.M
 
 	if len(r.Permissions) == 1 {
-		updateParams := bson.M{
+		updateParams = bson.M{
 			"permissions": "",
 		}
 	} else {
@@ -166,7 +169,7 @@ func Revoke(rid, pid string) (*services.Role, error) {
 			prms = append(prms, p)
 		}
 
-		updateParams := bson.M{
+		updateParams = bson.M{
 			"permissions": strings.Join(prms, common.MongoRoleSep),
 		}
 	}
@@ -218,8 +221,10 @@ func AddRole(mongoid, rid string) (*services.User, error) {
 		return u, common.ErrUserRoleExist
 	}
 
+	var updateParams bson.M
+
 	if len(u.Roles) == 0 {
-		updateParams := bson.M{
+		updateParams = bson.M{
 			"roles": rid,
 		}
 	} else {
@@ -229,7 +234,7 @@ func AddRole(mongoid, rid string) (*services.User, error) {
 		}
 		rs = append(rs, rid)
 
-		updateParams := bson.M{
+		updateParams = bson.M{
 			"roles": strings.Join(rs, common.MongoRoleSep),
 		}
 	}
@@ -264,8 +269,10 @@ func DelRole(mongoid, rid string) (*services.User, error) {
 		return u, common.ErrUserNotRoleExist
 	}
 
+	var updateParams bson.M
+
 	if len(u.Roles) == 1 {
-		updateParams := bson.M{
+		updateParams = bson.M{
 			"roles": "",
 		}
 	} else {
@@ -277,7 +284,7 @@ func DelRole(mongoid, rid string) (*services.User, error) {
 			rs = append(rs, r)
 		}
 
-		updateParams := bson.M{
+		updateParams = bson.M{
 			"roles": strings.Join(rs, common.MongoRoleSep),
 		}
 	}
@@ -287,7 +294,7 @@ func DelRole(mongoid, rid string) (*services.User, error) {
 		return nil, err
 	}
 
-	if err = services.Revoke(mongoid, rid); err != nil {
+	if err = services.DelRole(mongoid, rid); err != nil {
 		return nil, err
 	}
 
@@ -299,15 +306,15 @@ func IsPrmitted(mongoid, pid string) (bool, error) {
 		Permit(mongoid, pid)
 }
 
-func GetAllPerms(skip, limit int, field string) []*services.Permission {
+func GetAllPerms(skip, limit int, field string) ([]*services.Permission, error) {
 	return services.GetPerms(skip, limit, field)
 }
 
-func GetAllRoles(skip, limit int, field string) []*services.Role {
+func GetAllRoles(skip, limit int, field string) ([]*services.Role, error) {
 	return services.GetRoles(skip, limit, field)
 }
 
-func GetallUsers(skip, limit int, field string) []*services.User {
+func GetAllUsers(skip, limit int, field string) ([]*services.User, error) {
 	return services.GetUsers(skip, limit, field)
 }
 

@@ -23,6 +23,10 @@ type User struct {
 func NewUserFromModel(m *models.User) *User {
 	_map := make(roleMap)
 	for _, r := range strings.Split(m.Roles, common.MongoRoleSep) {
+		if r == "" {
+			continue
+		}
+
 		if _, found := _map[r]; found {
 			continue
 		}
