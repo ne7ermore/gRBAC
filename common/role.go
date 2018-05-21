@@ -56,6 +56,10 @@ func (role *stdRole) getPermissions() []Permission {
 }
 
 func rolesPermit(u User, p Permission) bool {
+	if len(u) == 0 {
+		return false
+	}
+
 	have := make(chan bool)
 
 	for _, r := range u {
