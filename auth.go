@@ -301,9 +301,16 @@ func DelRole(mongoid, rid string) (*services.User, error) {
 	return u, nil
 }
 
+// to check if user owns one permission
 func IsPrmitted(mongoid, pid string) (bool, error) {
 	return common.Get().
 		Permit(mongoid, pid)
+}
+
+// to check if role own one permission or not
+func IsRolePermitted(roleid, pid string) (bool, error) {
+	return common.Get().
+		RolePermit(roleid, pid)
 }
 
 func GetAllPerms(skip, limit int, field string) ([]*services.Permission, error) {
@@ -320,4 +327,8 @@ func GetAllUsers(skip, limit int, field string) ([]*services.User, error) {
 
 func GetPermByDesc(descrip string) (*services.Permission, error) {
 	return services.GetPermByDesc(descrip)
+}
+
+func GetRoleByName(name string) (*services.Role, error) {
+	return services.GetRoleByName(name)
 }

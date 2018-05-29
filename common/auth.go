@@ -216,6 +216,7 @@ func (auth *Auth) DelRole(uid, rid string) error {
 	return nil
 }
 
+// check user has permission
 func (auth *Auth) Permit(uid, pid string) (bool, error) {
 	auth.RLock()
 	defer auth.RUnlock()
@@ -232,6 +233,22 @@ func (auth *Auth) Permit(uid, pid string) (bool, error) {
 
 	isPerm := rolesPermit(u, p)
 	return isPerm, nil
+}
+
+// check role has permission
+func (auth *Auth) RolePermit(rid, pid string) (bool, error) {
+	p, err := auth.GetPerm(pid)
+	if err != nil {
+		return false, err
+	}
+
+	r, err := auth.GetRole(rid)
+	if err != nil {
+		return false, err
+	}
+
+	u := map[string]Role{"role_check": r}
+	return rolesPermit(u, p), nil
 }
 
 func (auth *Auth) GetAllUsers() map[string]User {

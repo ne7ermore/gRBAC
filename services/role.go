@@ -139,3 +139,15 @@ func GetRoles(skip, limit int, field string) ([]*Role, error) {
 
 	return roles, nil
 }
+
+// get role from db by role name
+func GetRoleByName(name string) (*Role, error) {
+	col := models.NewRoleColl()
+	defer col.Database.Session.Close()
+
+	mr := new(models.Role)
+	if err := col.Find(bson.M{"name": name}).One(mr); err != nil {
+		return nil, err
+	}
+	return NewRoleFromModel(mr), nil
+}
