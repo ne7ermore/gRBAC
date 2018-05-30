@@ -7,20 +7,17 @@ Role-Based Access Control
 
 ### Usage
 
-
+install packge
 ```
-// install packge
-> go get github.com/ne7ermore/gRBAC
+go get github.com/ne7ermore/gRBAC
 ```
 
+import
 ```
 import "github.com/ne7ermore/gRBAC/auth"
-
-// init mongodb, permissions, roles, users
-auth.init()
-
-// more api infos please check below
 ```
+
+We use MongoDB in this Project, and u can edit [db settings](https://github.com/ne7ermore/gRBAC/blob/master/common/const.go#L26) by urself
 
 ## API
 |Function|Description|
