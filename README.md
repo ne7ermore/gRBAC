@@ -39,4 +39,4 @@ We use MongoDB in this Project, and u can edit [db settings](https://github.com/
 |IsPrmitted|A user has a permission or not|
 |GetAllPerms|Get all permissions|
 |GetAllRoles|Get all roles|
-|GetallUsers|Get all users|
+|GetAllUsers|Get all users|

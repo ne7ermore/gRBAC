@@ -22,6 +22,7 @@ func NewPermissionFromModel(m *models.Permission) *Permission {
 	return &Permission{
 		Id:         m.Id,
 		Descrip:    m.Descrip,
+		Name:       m.Name,
 		Sep:        m.Sep,
 		CreateTime: m.CreateTime,
 		UpdateTime: m.UpdateTime,

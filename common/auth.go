@@ -161,11 +161,22 @@ func (auth *Auth) GetAllRoles() Roles {
 	return auth.roles
 }
 
+// TODO: 解决死锁问题
+//
+// If a goroutine holds a RWMutex for reading and another goroutine might call Lock,
+// no goroutine should expect to be able to acquire a read lock until the initial read lock is released.
+// In particular, this prohibits recursive read locking.
+// This is to ensure that the lock eventually becomes available;
+// a blocked Lock call excludes new readers from acquiring the lock.
+//
 func (auth *Auth) AddRole(uid, rid string) error {
-	auth.Lock()
-	defer auth.Unlock()
+	// auth.Lock()
+	// defer auth.Unlock()
 
+	auth.RLock()
 	u, have := auth.users[uid]
+	auth.RUnlock()
+
 	if !have {
 		return ErrUserNotExist
 	}
@@ -179,7 +190,12 @@ func (auth *Auth) AddRole(uid, rid string) error {
 		return ErrUserRoleExist
 	}
 
+	// u[rid] = r
+
+	auth.Lock()
 	u[rid] = r
+	auth.Unlock()
+
 	return nil
 }
 
@@ -200,6 +216,7 @@ func (auth *Auth) DelRole(uid, rid string) error {
 	return nil
 }
 
+// check user has permission
 func (auth *Auth) Permit(uid, pid string) (bool, error) {
 	auth.RLock()
 	defer auth.RUnlock()
@@ -216,6 +233,22 @@ func (auth *Auth) Permit(uid, pid string) (bool, error) {
 
 	isPerm := rolesPermit(u, p)
 	return isPerm, nil
+}
+
+// check role has permission
+func (auth *Auth) RolePermit(rid, pid string) (bool, error) {
+	p, err := auth.GetPerm(pid)
+	if err != nil {
+		return false, err
+	}
+
+	r, err := auth.GetRole(rid)
+	if err != nil {
+		return false, err
+	}
+
+	u := map[string]Role{"role_check": r}
+	return rolesPermit(u, p), nil
 }
 
 func (auth *Auth) GetAllUsers() map[string]User {
