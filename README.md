@@ -14,7 +14,9 @@ go get github.com/ne7ermore/gRBAC
 
 import
 ```
-import "github.com/ne7ermore/gRBAC/auth"
+import (
+    auth "github.com/ne7ermore/gRBAC"
+)
 ```
 
 We use MongoDB in this Project, and u can edit [db settings](https://github.com/ne7ermore/gRBAC/blob/master/common/const.go#L26) by urself
