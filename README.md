@@ -1,5 +1,5 @@
 ## RBAC
-Role-Based Access Control
+Role-Based Access Control, godoc link to [HERE](https://godoc.org/github.com/ne7ermore/gRBAC)
 
 ### Packages
 * [mongo](https://gopkg.in/mgo.v2)
@@ -38,6 +38,11 @@ auth.init()
 |AddRole|Add one role to a user|
 |DelRole|Delete one role from the user|
 |IsPrmitted|A user has a permission or not|
+|IsRolePermitted|A role has a permission or not|
 |GetAllPerms|Get all permissions|
 |GetAllRoles|Get all roles|
 |GetAllUsers|Get all users|
+|GetRoleByName|Get a role by role name|
+|GetPermCount|Get perms count|
+|GetRolesCount|Get roles count|
+|GetUsersCount|Get users count|
