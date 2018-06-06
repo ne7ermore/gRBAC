@@ -30,7 +30,13 @@ func NewUserFromModel(m *models.User) *User {
 		if _, found := _map[r]; found {
 			continue
 		}
-		_map[r] = r
+		bsonId := bson.ObjectIdHex(r)
+		if role, err := GetRoleById(bsonId); err != nil {
+			println(err.Error())
+			continue
+		} else {
+			_map[r] = role
+		}
 	}
 
 	return &User{
@@ -126,4 +132,12 @@ func GetUsers(skip, limit int, field string) ([]*User, error) {
 	}
 
 	return users, nil
+}
+
+func GetUsersCount() int {
+	col := models.NewUserColl()
+	defer col.Database.Session.Close()
+
+	cnt, _ := col.Count()
+	return cnt
 }

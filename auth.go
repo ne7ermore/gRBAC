@@ -332,3 +332,16 @@ func GetPermByDesc(descrip string) (*services.Permission, error) {
 func GetRoleByName(name string) (*services.Role, error) {
 	return services.GetRoleByName(name)
 }
+
+// count perms and roles and users
+func GetPermsCount() int {
+	return services.GetPermsCount()
+}
+
+func GetRolesCount() int {
+	return services.GetRolesCount()
+}
+
+func GetUsersCount() int {
+	return services.GetUsersCount()
+}

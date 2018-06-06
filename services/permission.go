@@ -109,3 +109,11 @@ func GetPerms(skip, limit int, field string) ([]*Permission, error) {
 
 	return perms, nil
 }
+
+func GetPermsCount() int {
+	col := models.NewPermissionColl()
+	defer col.Database.Session.Close()
+
+	cnt, _ := col.Count()
+	return cnt
+}

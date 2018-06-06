@@ -31,7 +31,15 @@ func NewRoleFromModel(m *models.Role) *Role {
 		if _, found := _map[p]; found {
 			continue
 		}
-		_map[p] = p
+
+		bsonId := bson.ObjectIdHex(p)
+		if perm, err := GetPermById(bsonId); err != nil {
+			println(err.Error())
+			continue
+		} else {
+			_map[p] = perm
+		}
+
 	}
 
 	return &Role{
@@ -150,4 +158,12 @@ func GetRoleByName(name string) (*Role, error) {
 		return nil, err
 	}
 	return NewRoleFromModel(mr), nil
+}
+
+func GetRolesCount() int {
+	col := models.NewRoleColl()
+	defer col.Database.Session.Close()
+
+	cnt, _ := col.Count()
+	return cnt
 }
