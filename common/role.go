@@ -61,6 +61,7 @@ func rolesPermit(u User, p Permission) bool {
 	}
 
 	have := make(chan bool)
+	defer close(have)
 
 	for _, r := range u {
 		go func(r Role, p Permission) {
@@ -69,7 +70,7 @@ func rolesPermit(u User, p Permission) bool {
 			} else {
 				have <- false
 			}
-			close(have)
+			// close(have) panic: send on closed channel
 		}(r, p)
 	}
 
