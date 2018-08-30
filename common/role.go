@@ -60,22 +60,9 @@ func rolesPermit(u User, p Permission) bool {
 		return false
 	}
 
-	have := make(chan bool)
-	defer close(have)
-
+	// Brute Force
 	for _, r := range u {
-		go func(r Role, p Permission) {
-			if r.permit(p) {
-				have <- true
-			} else {
-				have <- false
-			}
-			// close(have) panic: send on closed channel
-		}(r, p)
-	}
-
-	for is := range have {
-		if is {
+		if r.permit(p) {
 			return true
 		}
 	}
