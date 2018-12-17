@@ -60,12 +60,16 @@ func rolesPermit(u User, p Permission) bool {
 		return false
 	}
 
-	// Brute Force
-	for _, r := range u {
-		if r.permit(p) {
-			return true
-		}
-	}
+	have := make(chan bool)
 
-	return false
+	go func(u User, p Permission) {
+		for _, r := range u {
+			if r.permit(p) {
+				have <- true
+			}
+		}
+		have <- false
+	}(u, p)
+
+	return <-have
 }
