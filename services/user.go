@@ -29,9 +29,7 @@ func NewUserFromModel(m plugin.User, rp plugin.RolePools) *User {
 			continue
 		}
 
-		if role, err := rp.Get(r); err != nil {
-			continue
-		} else {
+		if role, err := rp.Get(r); err == nil {
 			_map[r] = role
 		}
 	}

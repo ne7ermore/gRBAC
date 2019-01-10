@@ -20,7 +20,7 @@ func Test_valid(t *testing.T) {
 		t.Fatal()
 	}
 
-	users, err := GetUsers(0, 5, "-updateTime", models.Get().GetUserPools())
+	users, err := GetUsers(0, 5, "-updateTime", models.Get().GetUserPools(), models.Get().GetRolePools())
 	if err != nil {
 		t.Fatal(err)
 	}

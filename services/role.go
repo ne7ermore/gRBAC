@@ -8,7 +8,7 @@ import (
 	"github.com/ne7ermore/gRBAC/plugin"
 )
 
-type perMap map[string]interface{}
+type perMap map[string]plugin.Permission
 
 type Role struct {
 	Id          string    `json:"id"`
@@ -18,7 +18,7 @@ type Role struct {
 	UpdateTime  time.Time `json:"updateTime"`
 }
 
-func NewRoleFromModel(r plugin.Role) *Role {
+func NewRoleFromModel(r plugin.Role, pp plugin.PermissionPools) *Role {
 	_map := make(perMap)
 	for _, p := range strings.Split(r.GetPermissions(), common.MongoRoleSep) {
 		// skip empty str while m.Permissions is ""
@@ -29,7 +29,10 @@ func NewRoleFromModel(r plugin.Role) *Role {
 		if _, found := _map[p]; found {
 			continue
 		}
-		_map[p] = p
+
+		if perm, err := pp.Get(p); err == nil {
+			_map[p] = perm
+		}
 	}
 
 	return &Role{
@@ -41,13 +44,13 @@ func NewRoleFromModel(r plugin.Role) *Role {
 	}
 }
 
-func CreateRole(name string, rp plugin.RolePools) (*Role, error) {
+func CreateRole(name string, rp plugin.RolePools, pp plugin.PermissionPools) (*Role, error) {
 	id, err := rp.New(name)
 	if err != nil {
 		return nil, err
 	}
 
-	mr, err := GetRoleById(id, rp)
+	mr, err := GetRoleById(id, rp, pp)
 	if err != nil {
 		return nil, err
 	}
@@ -56,22 +59,22 @@ func CreateRole(name string, rp plugin.RolePools) (*Role, error) {
 	return mr, nil
 }
 
-func GetRoleById(id string, rp plugin.RolePools) (*Role, error) {
+func GetRoleById(id string, rp plugin.RolePools, pp plugin.PermissionPools) (*Role, error) {
 	mr, err := rp.Get(id)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewRoleFromModel(mr), nil
+	return NewRoleFromModel(mr, pp), nil
 }
 
-func UpdateRole(id string, update map[string]string, rp plugin.RolePools) (*Role, error) {
+func UpdateRole(id string, update map[string]string, rp plugin.RolePools, pp plugin.PermissionPools) (*Role, error) {
 
 	if err := rp.Update(id, update); err != nil {
 		return nil, err
 	}
 
-	return GetRoleById(id, rp)
+	return GetRoleById(id, rp, pp)
 }
 
 func Assign(rid, pid string) error {
@@ -104,7 +107,7 @@ func Revoke(rid, pid string) error {
 	return auth.Revoke(r, p)
 }
 
-func GetRoles(skip, limit int, field string, rp plugin.RolePools) ([]*Role, error) {
+func GetRoles(skip, limit int, field string, rp plugin.RolePools, pp plugin.PermissionPools) ([]*Role, error) {
 	rs, err := rp.Gets(skip, limit, field)
 	if err != nil {
 		return nil, err
@@ -112,20 +115,20 @@ func GetRoles(skip, limit int, field string, rp plugin.RolePools) ([]*Role, erro
 
 	roles := make([]*Role, 0, limit)
 	for _, r := range rs {
-		roles = append(roles, NewRoleFromModel(r))
+		roles = append(roles, NewRoleFromModel(r, pp))
 	}
 
 	return roles, nil
 }
 
 // get role from db by role name
-func GetRoleByName(name string, r plugin.RolePools) (*Role, error) {
+func GetRoleByName(name string, r plugin.RolePools, pp plugin.PermissionPools) (*Role, error) {
 	rr, err := r.GetByName(name)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewRoleFromModel(rr), nil
+	return NewRoleFromModel(rr, pp), nil
 }
 
 func GetRolesCount(rp plugin.RolePools) int {

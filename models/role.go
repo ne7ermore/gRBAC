@@ -3,7 +3,7 @@ package models
 import (
 	"time"
 
-	"gopkg.in/mgo.v2"
+	mgo "gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/ne7ermore/gRBAC/common"
@@ -11,11 +11,11 @@ import (
 )
 
 type Role struct {
-	Id          bson.ObjectId `bson:"_id,omitempty"`
-	Name        string        `bson:"name"`
-	Permissions string        `bson:"permissions"`
-	CreateTime  time.Time     `bson:"createTime"`
-	UpdateTime  time.Time     `bson:"updateTime,omitempty"`
+	Id          bson.ObjectId `bson:"_id,omitempty" json:"id"`
+	Name        string        `bson:"name" json:"name"`
+	Permissions string        `bson:"permissions" json:"permissions"`
+	CreateTime  time.Time     `bson:"createTime" json:"createTime"`
+	UpdateTime  time.Time     `bson:"updateTime,omitempty" json:"updateTime"`
 }
 
 func (r Role) Getid() string {
