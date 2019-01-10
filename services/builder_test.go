@@ -7,12 +7,15 @@ import (
 )
 
 func Test_build(t *testing.T) {
-	models.NewMongodb(models.MongoInfo{"127.0.0.1:27017", 5, 1000})
-	err := InitPerm()
+	models.Get().Build()
+	p := models.Get().GetPermissionPools()
+	err := initPerm(p)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = InitRole()
+
+	r := models.Get().GetRolePools()
+	err = initRole(r)
 	if err != nil {
 		t.Fatal(err)
 	}

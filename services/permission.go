@@ -3,117 +3,85 @@ package services
 import (
 	"time"
 
-	"gopkg.in/mgo.v2/bson"
-
 	"github.com/ne7ermore/gRBAC/common"
-	"github.com/ne7ermore/gRBAC/models"
+	"github.com/ne7ermore/gRBAC/plugin"
 )
 
 type Permission struct {
-	Id         bson.ObjectId `json:"id"`
-	Name       string        `json:"name"`
-	Descrip    string        `json:"descrip"`
-	Sep        string        `json:"sep"`
-	CreateTime time.Time     `json:"createTime"`
-	UpdateTime time.Time     `json:"updateTime"`
+	Id         string    `json:"id"`
+	Name       string    `json:"name"`
+	Descrip    string    `json:"descrip"`
+	Sep        string    `json:"sep"`
+	CreateTime time.Time `json:"createTime"`
+	UpdateTime time.Time `json:"updateTime"`
 }
 
-func NewPermissionFromModel(m *models.Permission) *Permission {
+func NewPermissionFromModel(m plugin.Permission) *Permission {
 	return &Permission{
-		Id:         m.Id,
-		Descrip:    m.Descrip,
-		Name:       m.Name,
-		Sep:        m.Sep,
-		CreateTime: m.CreateTime,
-		UpdateTime: m.UpdateTime,
+		Id:         m.Getid(),
+		Descrip:    m.GetDescrip(),
+		Name:       m.GetName(),
+		Sep:        m.GetSep(),
+		CreateTime: m.GetCreateTime(),
+		UpdateTime: m.GetUpdateTime(),
 	}
 }
 
-func CreatePermisson(name, des string) (*Permission, error) {
-	col := models.NewPermissionColl()
-	defer col.Database.Session.Close()
-
-	id := bson.NewObjectId()
-	if err := col.Insert(models.Permission{
-		Id:         id,
-		Name:       name,
-		Descrip:    des,
-		Sep:        common.FirstSep,
-		CreateTime: time.Now(),
-		UpdateTime: time.Now(),
-	}); err != nil {
-		return nil, err
-	}
-	p, err := GetPermById(id)
+func CreatePermisson(name, des string, p plugin.PermissionPools) (*Permission, error) {
+	id, err := p.New(name, des)
 	if err != nil {
 		return nil, err
 	}
-	common.Get().
-		NewPerm(common.NewFirstP(id.Hex(), des))
 
-	return p, nil
-}
-
-func GetPermById(id bson.ObjectId) (*Permission, error) {
-	col := models.NewPermissionColl()
-	defer col.Database.Session.Close()
-
-	mp := new(models.Permission)
-	if err := col.Find(bson.M{"_id": id}).One(mp); err != nil {
+	pp, err := GetPermById(id, p)
+	if err != nil {
 		return nil, err
 	}
-	return NewPermissionFromModel(mp), nil
+
+	common.Get().NewPerm(common.NewFirstP(id, des))
+
+	return pp, nil
 }
 
-func GetPermByDesc(descrip string) (*Permission, error) {
-	col := models.NewPermissionColl()
-	defer col.Database.Session.Close()
-
-	mp := new(models.Permission)
-	if err := col.Find(bson.M{"descrip": descrip}).One(mp); err != nil {
+func GetPermById(id string, p plugin.PermissionPools) (*Permission, error) {
+	pp, err := p.Get(id)
+	if err != nil {
 		return nil, err
 	}
-	return NewPermissionFromModel(mp), nil
+	return NewPermissionFromModel(pp), nil
 }
 
-func UpdatePerm(id bson.ObjectId, update bson.M) (*Permission, error) {
-	col := models.NewPermissionColl()
-	defer col.Database.Session.Close()
-
-	r := new(models.Permission)
-	if err := col.FindId(id).One(r); err != nil {
+func GetPermByDesc(descrip string, p plugin.PermissionPools) (*Permission, error) {
+	pp, err := p.GetByDesc(descrip)
+	if err != nil {
 		return nil, err
 	}
-	update["updateTime"] = time.Now()
-	if err := col.UpdateId(id, bson.M{
-		"$set": update,
-	}); err != nil {
-		return nil, err
-	}
-	return GetPermById(id)
+	return NewPermissionFromModel(pp), nil
 }
 
-func GetPerms(skip, limit int, field string) ([]*Permission, error) {
-	col := models.NewPermissionColl()
-	defer col.Database.Session.Close()
+func UpdatePerm(id string, update map[string]string, p plugin.PermissionPools) (*Permission, error) {
 
-	mp := make([]models.Permission, 0, limit)
-	if err := col.Find(bson.M{}).Limit(limit).Skip(skip).Sort(field).All(&mp); err != nil {
+	if err := p.Update(id, update); err != nil {
+		return nil, err
+	}
+
+	return GetPermById(id, p)
+}
+
+func GetPerms(skip, limit int, field string, p plugin.PermissionPools) ([]*Permission, error) {
+	ps, err := p.Gets(skip, limit, field)
+	if err != nil {
 		return nil, err
 	}
 
 	perms := make([]*Permission, 0, limit)
-	for _, p := range mp {
-		perms = append(perms, NewPermissionFromModel(&p))
+	for _, p := range ps {
+		perms = append(perms, NewPermissionFromModel(p))
 	}
 
 	return perms, nil
 }
 
-func GetPermsCount() int {
-	col := models.NewPermissionColl()
-	defer col.Database.Session.Close()
-
-	cnt, _ := col.Count()
-	return cnt
+func GetPermissionsCount(pp plugin.PermissionPools) int {
+	return pp.Counts()
 }

@@ -22,9 +22,3 @@ var (
 	FirstSep     string = ":"
 	MongoRoleSep        = "@@##"
 )
-
-var (
-	Addrs     string = "127.0.0.1:27017"
-	Timeout   int64  = 5
-	PoolLimit int    = 1000
-)

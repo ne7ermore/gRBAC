@@ -2,13 +2,13 @@ package services
 
 import (
 	"testing"
-	// "time"
 
+	"github.com/ne7ermore/gRBAC/models"
 	"gopkg.in/mgo.v2/bson"
-	// "github.com/ne7ermore/gRBAC/models"
 )
 
 func Test_valid(t *testing.T) {
+	models.Get().Build()
 	a := "asd"
 	if bson.IsObjectIdHex(a) {
 		t.Fatal()
@@ -20,7 +20,7 @@ func Test_valid(t *testing.T) {
 		t.Fatal()
 	}
 
-	users, err := GetUsers(0, 5, "-updateTime")
+	users, err := GetUsers(0, 5, "-updateTime", models.Get().GetUserPools())
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -4,25 +4,23 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/mgo.v2/bson"
-
 	"github.com/ne7ermore/gRBAC/common"
-	"github.com/ne7ermore/gRBAC/models"
+	"github.com/ne7ermore/gRBAC/plugin"
 )
 
 type perMap map[string]interface{}
 
 type Role struct {
-	Id          bson.ObjectId `json:"id"`
-	Name        string        `json:"name"`
-	Permissions perMap        `json:"permissions"`
-	CreateTime  time.Time     `json:"createTime"`
-	UpdateTime  time.Time     `json:"updateTime"`
+	Id          string    `json:"id"`
+	Name        string    `json:"name"`
+	Permissions perMap    `json:"permissions"`
+	CreateTime  time.Time `json:"createTime"`
+	UpdateTime  time.Time `json:"updateTime"`
 }
 
-func NewRoleFromModel(m *models.Role) *Role {
+func NewRoleFromModel(r plugin.Role) *Role {
 	_map := make(perMap)
-	for _, p := range strings.Split(m.Permissions, common.MongoRoleSep) {
+	for _, p := range strings.Split(r.GetPermissions(), common.MongoRoleSep) {
 		// skip empty str while m.Permissions is ""
 		if p == "" {
 			continue
@@ -31,74 +29,49 @@ func NewRoleFromModel(m *models.Role) *Role {
 		if _, found := _map[p]; found {
 			continue
 		}
-
-		bsonId := bson.ObjectIdHex(p)
-		if perm, err := GetPermById(bsonId); err != nil {
-			println(err.Error())
-			continue
-		} else {
-			_map[p] = perm
-		}
-
+		_map[p] = p
 	}
 
 	return &Role{
-		Id:          m.Id,
-		Name:        m.Name,
+		Id:          r.Getid(),
+		Name:        r.GetName(),
 		Permissions: _map,
-		CreateTime:  m.CreateTime,
-		UpdateTime:  m.UpdateTime,
+		CreateTime:  r.GetCreateTime(),
+		UpdateTime:  r.GetUpdateTime(),
 	}
 }
 
-func CreateRole(name string) (*Role, error) {
-	col := models.NewRoleColl()
-	defer col.Database.Session.Close()
-
-	id := bson.NewObjectId()
-	if err := col.Insert(models.Role{
-		Id:         id,
-		Name:       name,
-		CreateTime: time.Now(),
-		UpdateTime: time.Now(),
-	}); err != nil {
-		return nil, err
-	}
-	r, err := GetRoleById(id)
+func CreateRole(name string, rp plugin.RolePools) (*Role, error) {
+	id, err := rp.New(name)
 	if err != nil {
 		return nil, err
 	}
-	common.Get().NewRole(common.NewStdRole(id.Hex()))
 
-	return r, nil
-}
-
-func GetRoleById(id bson.ObjectId) (*Role, error) {
-	col := models.NewRoleColl()
-	defer col.Database.Session.Close()
-
-	mr := new(models.Role)
-	if err := col.FindId(id).One(mr); err != nil {
+	mr, err := GetRoleById(id, rp)
+	if err != nil {
 		return nil, err
 	}
+	common.Get().NewRole(common.NewStdRole(id))
+
+	return mr, nil
+}
+
+func GetRoleById(id string, rp plugin.RolePools) (*Role, error) {
+	mr, err := rp.Get(id)
+	if err != nil {
+		return nil, err
+	}
+
 	return NewRoleFromModel(mr), nil
 }
 
-func UpdateRole(id bson.ObjectId, update bson.M) (*Role, error) {
-	col := models.NewRoleColl()
-	defer col.Database.Session.Close()
+func UpdateRole(id string, update map[string]string, rp plugin.RolePools) (*Role, error) {
 
-	r := new(models.Role)
-	if err := col.FindId(id).One(r); err != nil {
+	if err := rp.Update(id, update); err != nil {
 		return nil, err
 	}
-	update["updateTime"] = time.Now()
-	if err := col.UpdateId(id, bson.M{
-		"$set": update,
-	}); err != nil {
-		return nil, err
-	}
-	return GetRoleById(id)
+
+	return GetRoleById(id, rp)
 }
 
 func Assign(rid, pid string) error {
@@ -131,39 +104,30 @@ func Revoke(rid, pid string) error {
 	return auth.Revoke(r, p)
 }
 
-func GetRoles(skip, limit int, field string) ([]*Role, error) {
-	col := models.NewRoleColl()
-	defer col.Database.Session.Close()
-
-	mr := make([]models.Role, 0, limit)
-	if err := col.Find(bson.M{}).Limit(limit).Skip(skip).Sort(field).All(&mr); err != nil {
+func GetRoles(skip, limit int, field string, rp plugin.RolePools) ([]*Role, error) {
+	rs, err := rp.Gets(skip, limit, field)
+	if err != nil {
 		return nil, err
 	}
 
 	roles := make([]*Role, 0, limit)
-	for _, r := range mr {
-		roles = append(roles, NewRoleFromModel(&r))
+	for _, r := range rs {
+		roles = append(roles, NewRoleFromModel(r))
 	}
 
 	return roles, nil
 }
 
 // get role from db by role name
-func GetRoleByName(name string) (*Role, error) {
-	col := models.NewRoleColl()
-	defer col.Database.Session.Close()
-
-	mr := new(models.Role)
-	if err := col.Find(bson.M{"name": name}).One(mr); err != nil {
+func GetRoleByName(name string, r plugin.RolePools) (*Role, error) {
+	rr, err := r.GetByName(name)
+	if err != nil {
 		return nil, err
 	}
-	return NewRoleFromModel(mr), nil
+
+	return NewRoleFromModel(rr), nil
 }
 
-func GetRolesCount() int {
-	col := models.NewRoleColl()
-	defer col.Database.Session.Close()
-
-	cnt, _ := col.Count()
-	return cnt
+func GetRolesCount(rp plugin.RolePools) int {
+	return rp.Counts()
 }

@@ -4,25 +4,23 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/mgo.v2/bson"
-
 	"github.com/ne7ermore/gRBAC/common"
-	"github.com/ne7ermore/gRBAC/models"
+	"github.com/ne7ermore/gRBAC/plugin"
 )
 
 type roleMap map[string]interface{}
 
 type User struct {
-	Id         bson.ObjectId `json:"id"`
-	UserId     string        `json:"user_id"`
-	Roles      roleMap       `json:"roles"`
-	CreateTime time.Time     `json:"createTime"`
-	UpdateTime time.Time     `json:"updateTime"`
+	Id         string    `json:"id"`
+	UserId     string    `json:"user_id"`
+	Roles      roleMap   `json:"roles"`
+	CreateTime time.Time `json:"createTime"`
+	UpdateTime time.Time `json:"updateTime"`
 }
 
-func NewUserFromModel(m *models.User) *User {
+func NewUserFromModel(m plugin.User) *User {
 	_map := make(roleMap)
-	for _, r := range strings.Split(m.Roles, common.MongoRoleSep) {
+	for _, r := range strings.Split(m.GetRoles(), common.MongoRoleSep) {
 		if r == "" {
 			continue
 		}
@@ -30,83 +28,57 @@ func NewUserFromModel(m *models.User) *User {
 		if _, found := _map[r]; found {
 			continue
 		}
-		bsonId := bson.ObjectIdHex(r)
-		if role, err := GetRoleById(bsonId); err != nil {
-			println(err.Error())
-			continue
-		} else {
-			_map[r] = role
-		}
+		_map[r] = r
 	}
 
 	return &User{
-		Id:         m.Id,
-		UserId:     m.UserId,
+		Id:         m.Getid(),
+		UserId:     m.GetUserId(),
 		Roles:      _map,
-		CreateTime: m.CreateTime,
-		UpdateTime: m.UpdateTime,
+		CreateTime: m.GetCreateTime(),
+		UpdateTime: m.GetUpdateTime(),
 	}
 }
 
-func CreateUser(uid string) (*User, error) {
-	col := models.NewUserColl()
-	defer col.Database.Session.Close()
-
-	id := bson.NewObjectId()
-	if err := col.Insert(models.User{
-		Id:         id,
-		UserId:     uid,
-		CreateTime: time.Now(),
-		UpdateTime: time.Now(),
-	}); err != nil {
-		return nil, err
-	}
-	r, err := GetUserById(id)
+func CreateUser(uid string, up plugin.UserPools) (*User, error) {
+	id, err := up.New(uid)
 	if err != nil {
 		return nil, err
 	}
-	common.Get().NewUser(id.Hex())
 
-	return r, nil
+	u, err := GetUserById(id, up)
+	if err != nil {
+		return nil, err
+	}
+	common.Get().NewUser(id)
+
+	return u, nil
 }
 
-func GetUserById(id bson.ObjectId) (*User, error) {
-	col := models.NewUserColl()
-	defer col.Database.Session.Close()
-
-	mu := new(models.User)
-	if err := col.FindId(id).One(mu); err != nil {
+func GetUserById(id string, up plugin.UserPools) (*User, error) {
+	u, err := up.Get(id)
+	if err != nil {
 		return nil, err
 	}
-	return NewUserFromModel(mu), nil
+
+	return NewUserFromModel(u), nil
 }
 
-func GetUserByUid(uid string) (*User, error) {
-	col := models.NewUserColl()
-	defer col.Database.Session.Close()
-
-	mu := new(models.User)
-	if err := col.Find(bson.M{"user_id": uid}).One(mu); err != nil {
+func GetUserByUid(uid string, up plugin.UserPools) (*User, error) {
+	u, err := up.GetByUid(uid)
+	if err != nil {
 		return nil, err
 	}
-	return NewUserFromModel(mu), nil
+	return NewUserFromModel(u), nil
 }
 
-func UpdateUser(id bson.ObjectId, update bson.M) (*User, error) {
-	col := models.NewUserColl()
-	defer col.Database.Session.Close()
+func UpdateUser(id string, update map[string]string, up plugin.UserPools) (*User, error) {
 
-	u := new(models.User)
-	if err := col.FindId(id).One(u); err != nil {
+	if err := up.Update(id, update); err != nil {
 		return nil, err
 	}
-	update["updateTime"] = time.Now()
-	if err := col.UpdateId(id, bson.M{
-		"$set": update,
-	}); err != nil {
-		return nil, err
-	}
-	return GetUserById(id)
+
+	return GetUserById(id, up)
 }
 
 func AddRole(uid, rid string) error {
@@ -117,27 +89,20 @@ func DelRole(uid, rid string) error {
 	return common.Get().DelRole(uid, rid)
 }
 
-func GetUsers(skip, limit int, field string) ([]*User, error) {
-	col := models.NewUserColl()
-	defer col.Database.Session.Close()
-
-	mu := make([]models.User, 0, limit)
-	if err := col.Find(bson.M{}).Limit(limit).Skip(skip).Sort(field).All(&mu); err != nil {
+func GetUsers(skip, limit int, field string, up plugin.UserPools) ([]*User, error) {
+	us, err := up.Gets(skip, limit, field)
+	if err != nil {
 		return nil, err
 	}
 
 	users := make([]*User, 0, limit)
-	for _, u := range mu {
-		users = append(users, NewUserFromModel(&u))
+	for _, u := range us {
+		users = append(users, NewUserFromModel(u))
 	}
 
 	return users, nil
 }
 
-func GetUsersCount() int {
-	col := models.NewUserColl()
-	defer col.Database.Session.Close()
-
-	cnt, _ := col.Count()
-	return cnt
+func GetUsersCount(up plugin.UserPools) int {
+	return up.Counts()
 }

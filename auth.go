@@ -1,9 +1,7 @@
-package autht
+package rbac
 
 import (
 	"strings"
-
-	"gopkg.in/mgo.v2/bson"
 
 	"github.com/ne7ermore/gRBAC/common"
 	"github.com/ne7ermore/gRBAC/models"
@@ -11,51 +9,30 @@ import (
 )
 
 func init() {
-	// init mongodb
-	models.NewMongodb(models.MongoInfo{
-		Addrs:     common.Addrs,
-		Timeout:   common.Timeout,
-		PoolLimit: common.PoolLimit,
-	})
-
-	// init permissions
-	if err := services.InitPerm(); err != nil {
-		panic(err)
-	}
-
-	// init roles
-	if err := services.InitRole(); err != nil {
-		panic(err)
-	}
-
-	// init users
-	if err := services.InitUser(); err != nil {
-		panic(err)
-	}
+	s := models.Get()
+	services.Build(s)
 }
 
 func CreatePermisson(name, des string) (*services.Permission, error) {
-	return services.CreatePermisson(name, des)
+	pp := models.Get().GetPermissionPools()
+	defer pp.Close()
+
+	return services.CreatePermisson(name, des, pp)
 }
 
 func GetPerm(id string) (*services.Permission, error) {
-	if !bson.IsObjectIdHex(id) {
-		return nil, common.ErrInvalidMongoId
-	}
+	pp := models.Get().GetPermissionPools()
+	defer pp.Close()
 
-	return services.GetPermById(bson.ObjectIdHex(id))
+	return services.GetPermById(id, pp)
 }
 
 func UpdatePerm(id string, params ...string) (*services.Permission, error) {
-	if !bson.IsObjectIdHex(id) {
-		return nil, common.ErrInvalidMongoId
-	}
-
 	if len(params) == 0 || len(params) > 2 {
 		GetPerm(id)
 	}
 
-	updateParams := bson.M{}
+	updateParams := map[string]string{}
 	if len(params) == 1 {
 		updateParams["descrip"] = params[0]
 	} else {
@@ -63,7 +40,10 @@ func UpdatePerm(id string, params ...string) (*services.Permission, error) {
 		updateParams["name"] = params[1]
 	}
 
-	p, err := services.UpdatePerm(bson.ObjectIdHex(id), updateParams)
+	pp := models.Get().GetPermissionPools()
+	defer pp.Close()
+
+	p, err := services.UpdatePerm(id, updateParams, pp)
 	if err != nil {
 		return p, err
 	}
@@ -76,21 +56,20 @@ func UpdatePerm(id string, params ...string) (*services.Permission, error) {
 }
 
 func CreateRole(name string) (*services.Role, error) {
-	return services.CreateRole(name)
+	rp := models.Get().GetRolePools()
+	defer rp.Close()
+
+	return services.CreateRole(name, rp)
 }
 
 func GetRole(id string) (*services.Role, error) {
-	if !bson.IsObjectIdHex(id) {
-		return nil, common.ErrInvalidMongoId
-	}
-	return services.GetRoleById(bson.ObjectIdHex(id))
+	rp := models.Get().GetRolePools()
+	defer rp.Close()
+
+	return services.GetRoleById(id, rp)
 }
 
 func Assign(rid, pid string) (*services.Role, error) {
-	if !bson.IsObjectIdHex(rid) {
-		return nil, common.ErrInvalidMongoId
-	}
-
 	r, err := GetRole(rid)
 	if err != nil {
 		return nil, err
@@ -105,11 +84,11 @@ func Assign(rid, pid string) (*services.Role, error) {
 		return r, common.ErrPermExist
 	}
 
-	var updateParams bson.M
+	var updateParams map[string]string
 
 	// for nil Permissions
 	if len(r.Permissions) == 0 {
-		updateParams = bson.M{
+		updateParams = map[string]string{
 			"permissions": pid,
 		}
 	} else {
@@ -119,12 +98,15 @@ func Assign(rid, pid string) (*services.Role, error) {
 		}
 		prms = append(prms, pid)
 
-		updateParams = bson.M{
+		updateParams = map[string]string{
 			"permissions": strings.Join(prms, common.MongoRoleSep),
 		}
 	}
 
-	r, err = services.UpdateRole(bson.ObjectIdHex(rid), updateParams)
+	rp := models.Get().GetRolePools()
+	defer rp.Close()
+
+	r, err = services.UpdateRole(rid, updateParams, rp)
 	if err != nil {
 		return nil, err
 	}
@@ -137,10 +119,6 @@ func Assign(rid, pid string) (*services.Role, error) {
 }
 
 func Revoke(rid, pid string) (*services.Role, error) {
-	if !bson.IsObjectIdHex(rid) {
-		return nil, common.ErrInvalidMongoId
-	}
-
 	r, err := GetRole(rid)
 	if err != nil {
 		return nil, err
@@ -154,10 +132,10 @@ func Revoke(rid, pid string) (*services.Role, error) {
 	if _, ok := r.Permissions[pid]; !ok {
 		return r, common.ErrPermNotExist
 	}
-	var updateParams bson.M
+	var updateParams map[string]string
 
 	if len(r.Permissions) == 1 {
-		updateParams = bson.M{
+		updateParams = map[string]string{
 			"permissions": "",
 		}
 	} else {
@@ -169,12 +147,15 @@ func Revoke(rid, pid string) (*services.Role, error) {
 			prms = append(prms, p)
 		}
 
-		updateParams = bson.M{
+		updateParams = map[string]string{
 			"permissions": strings.Join(prms, common.MongoRoleSep),
 		}
 	}
 
-	r, err = services.UpdateRole(bson.ObjectIdHex(rid), updateParams)
+	rp := models.Get().GetRolePools()
+	defer rp.Close()
+
+	r, err = services.UpdateRole(rid, updateParams, rp)
 	if err != nil {
 		return nil, err
 	}
@@ -187,27 +168,28 @@ func Revoke(rid, pid string) (*services.Role, error) {
 }
 
 func CreateUser(uid string) (*services.User, error) {
-	return services.CreateUser(uid)
+	up := models.Get().GetUserPools()
+	defer up.Close()
+
+	return services.CreateUser(uid, up)
 }
 
-func GetUser(mongoid string) (*services.User, error) {
-	if !bson.IsObjectIdHex(mongoid) {
-		return nil, common.ErrInvalidMongoId
-	}
+func GetUser(id string) (*services.User, error) {
+	up := models.Get().GetUserPools()
+	defer up.Close()
 
-	return services.GetUserById(bson.ObjectIdHex(mongoid))
+	return services.GetUserById(id, up)
 }
 
 func GetUserByUid(uid string) (*services.User, error) {
-	return services.GetUserByUid(uid)
+	up := models.Get().GetUserPools()
+	defer up.Close()
+
+	return services.GetUserByUid(uid, up)
 }
 
-func AddRole(mongoid, rid string) (*services.User, error) {
-	if !bson.IsObjectIdHex(mongoid) {
-		return nil, common.ErrInvalidMongoId
-	}
-
-	u, err := GetUser(mongoid)
+func AddRole(id, rid string) (*services.User, error) {
+	u, err := GetUser(id)
 	if err != nil {
 		return nil, err
 	}
@@ -221,10 +203,10 @@ func AddRole(mongoid, rid string) (*services.User, error) {
 		return u, common.ErrUserRoleExist
 	}
 
-	var updateParams bson.M
+	var updateParams map[string]string
 
 	if len(u.Roles) == 0 {
-		updateParams = bson.M{
+		updateParams = map[string]string{
 			"roles": rid,
 		}
 	} else {
@@ -234,28 +216,28 @@ func AddRole(mongoid, rid string) (*services.User, error) {
 		}
 		rs = append(rs, rid)
 
-		updateParams = bson.M{
+		updateParams = map[string]string{
 			"roles": strings.Join(rs, common.MongoRoleSep),
 		}
 	}
-	u, err = services.UpdateUser(bson.ObjectIdHex(mongoid), updateParams)
+
+	up := models.Get().GetUserPools()
+	defer up.Close()
+
+	u, err = services.UpdateUser(id, updateParams, up)
 	if err != nil {
 		return nil, err
 	}
 
-	if err = services.AddRole(mongoid, rid); err != nil {
+	if err = services.AddRole(id, rid); err != nil {
 		return nil, err
 	}
 
 	return u, nil
 }
 
-func DelRole(mongoid, rid string) (*services.User, error) {
-	if !bson.IsObjectIdHex(mongoid) {
-		return nil, common.ErrInvalidMongoId
-	}
-
-	u, err := GetUser(mongoid)
+func DelRole(id, rid string) (*services.User, error) {
+	u, err := GetUser(id)
 	if err != nil {
 		return nil, err
 	}
@@ -269,10 +251,10 @@ func DelRole(mongoid, rid string) (*services.User, error) {
 		return u, common.ErrUserNotRoleExist
 	}
 
-	var updateParams bson.M
+	var updateParams map[string]string
 
 	if len(u.Roles) == 1 {
-		updateParams = bson.M{
+		updateParams = map[string]string{
 			"roles": "",
 		}
 	} else {
@@ -284,17 +266,20 @@ func DelRole(mongoid, rid string) (*services.User, error) {
 			rs = append(rs, r)
 		}
 
-		updateParams = bson.M{
+		updateParams = map[string]string{
 			"roles": strings.Join(rs, common.MongoRoleSep),
 		}
 	}
 
-	u, err = services.UpdateUser(bson.ObjectIdHex(mongoid), updateParams)
+	up := models.Get().GetUserPools()
+	defer up.Close()
+
+	u, err = services.UpdateUser(id, updateParams, up)
 	if err != nil {
 		return nil, err
 	}
 
-	if err = services.DelRole(mongoid, rid); err != nil {
+	if err = services.DelRole(id, rid); err != nil {
 		return nil, err
 	}
 
@@ -302,46 +287,65 @@ func DelRole(mongoid, rid string) (*services.User, error) {
 }
 
 // to check if user owns one permission
-func IsPrmitted(mongoid, pid string) (bool, error) {
-	return common.Get().
-		Permit(mongoid, pid)
+func IsPrmitted(id, pid string) (bool, error) {
+	return common.Get().Permit(id, pid)
 }
 
 // to check if role own one permission or not
 func IsRolePermitted(roleid, pid string) (bool, error) {
-	return common.Get().
-		RolePermit(roleid, pid)
+	return common.Get().RolePermit(roleid, pid)
 }
 
 func GetAllPerms(skip, limit int, field string) ([]*services.Permission, error) {
-	return services.GetPerms(skip, limit, field)
+	pp := models.Get().GetPermissionPools()
+	defer pp.Close()
+
+	return services.GetPerms(skip, limit, field, pp)
 }
 
 func GetAllRoles(skip, limit int, field string) ([]*services.Role, error) {
-	return services.GetRoles(skip, limit, field)
+	rp := models.Get().GetRolePools()
+	defer rp.Close()
+
+	return services.GetRoles(skip, limit, field, rp)
 }
 
 func GetAllUsers(skip, limit int, field string) ([]*services.User, error) {
-	return services.GetUsers(skip, limit, field)
+	up := models.Get().GetUserPools()
+	defer up.Close()
+
+	return services.GetUsers(skip, limit, field, up)
 }
 
 func GetPermByDesc(descrip string) (*services.Permission, error) {
-	return services.GetPermByDesc(descrip)
+	pp := models.Get().GetPermissionPools()
+	defer pp.Close()
+
+	return services.GetPermByDesc(descrip, pp)
 }
 
 func GetRoleByName(name string) (*services.Role, error) {
-	return services.GetRoleByName(name)
+	rp := models.Get().GetRolePools()
+	defer rp.Close()
+
+	return services.GetRoleByName(name, rp)
 }
 
-// count perms and roles and users
 func GetPermsCount() int {
-	return services.GetPermsCount()
-}
+	pp := models.Get().GetPermissionPools()
+	defer pp.Close()
 
+	return services.GetPermissionsCount(pp)
+}
 func GetRolesCount() int {
-	return services.GetRolesCount()
-}
+	rp := models.Get().GetRolePools()
+	defer rp.Close()
 
+	return services.GetRolesCount(rp)
+}
 func GetUsersCount() int {
-	return services.GetUsersCount()
+	up := models.Get().GetUserPools()
+	defer up.Close()
+
+	return services.GetUsersCount(up)
 }

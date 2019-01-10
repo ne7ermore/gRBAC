@@ -4,13 +4,50 @@ import (
 	"fmt"
 	"math"
 	"strings"
+	"sync"
 	"time"
 
 	"gopkg.in/mgo.v2"
 )
 
+const (
+	addrs     string = "127.0.0.1:27017"
+	auth             = "auth"
+	perm             = "permission"
+	role             = "role"
+	user             = "user"
+	timeout   int64  = 5
+	poolLimit int    = 1000
+)
+
+var (
+	mStore     *Store = nil
+	mStoreOnce sync.Once
+)
+
 type MongoDB struct {
 	Session *mgo.Session
+}
+
+type Store struct {
+	addrs, auth, perm, role, user string
+	timeout                       int64
+	poolLimit                     int
+}
+
+func Get() *Store {
+	mStoreOnce.Do(func() {
+		mStore = &Store{
+			addrs:     addrs,
+			auth:      auth,
+			perm:      perm,
+			role:      role,
+			user:      user,
+			timeout:   timeout,
+			poolLimit: poolLimit,
+		}
+	})
+	return mStore
 }
 
 var db MongoDB
@@ -24,7 +61,7 @@ type MongoInfo struct {
 /**
  * 数据库初始化
  */
-func NewMongodb(mi MongoInfo) error {
+func newMongodb(mi MongoInfo) error {
 	info := mgo.DialInfo{
 		Addrs:     strings.Split(mi.Addrs, ","),
 		Timeout:   time.Duration(mi.Timeout * int64(math.Pow10(9))),
@@ -65,4 +102,12 @@ func NewMongodbDB(dbName string) *mgo.Database {
 
 func NewMongodbColl(dbName, collName string) *mgo.Collection {
 	return NewMongodbDB(dbName).C(collName)
+}
+
+func (s *Store) Build() {
+	newMongodb(MongoInfo{
+		Addrs:     s.addrs,
+		Timeout:   s.timeout,
+		PoolLimit: s.poolLimit,
+	})
 }

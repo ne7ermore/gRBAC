@@ -4,43 +4,61 @@ import (
 	"strings"
 
 	"github.com/ne7ermore/gRBAC/common"
-	"github.com/ne7ermore/gRBAC/models"
+	"github.com/ne7ermore/gRBAC/plugin"
 )
 
-func InitPerm() error {
-	mps := []models.Permission{}
-	pc := models.NewPermissionColl()
-	defer pc.Database.Session.Close()
+func Build(s plugin.Store) {
+	s.Build()
 
-	if err := pc.Find(nil).All(&mps); err != nil {
+	// init permissions
+	p := s.GetPermissionPools()
+	if err := initPerm(p); err != nil {
+		panic(err)
+	}
+
+	// init roles
+	r := s.GetRolePools()
+	if err := initRole(r); err != nil {
+		panic(err)
+	}
+
+	// init users
+	u := s.GetUserPools()
+	if err := initUser(u); err != nil {
+		panic(err)
+	}
+}
+
+func initPerm(pp plugin.PermissionPools) error {
+	ps, err := pp.Gather()
+	if err != nil {
 		return err
 	}
 
-	ps := make([]common.Permission, 0, len(mps))
-	for _, mp := range mps {
-		ps = append(ps, common.NewFirstP(mp.Id.Hex(), mp.Descrip))
+	cps := make([]common.Permission, 0, len(ps))
+	for _, p := range ps {
+		cps = append(cps, common.NewFirstP(p.Getid(), p.GetDescrip()))
 	}
-	common.Get().NewPerms(ps)
+
+	common.Get().NewPerms(cps)
 	return nil
 }
 
-func InitRole() error {
-	mrs := []models.Role{}
-	rc := models.NewRoleColl()
-	defer rc.Database.Session.Close()
-
-	if err := rc.Find(nil).All(&mrs); err != nil {
+func initRole(rp plugin.RolePools) error {
+	rs, err := rp.Gather()
+	if err != nil {
 		return err
 	}
+
 	auth := common.Get()
-	for _, mr := range mrs {
-		sr := common.NewStdRole(mr.Id.Hex())
+	for _, r := range rs {
+		sr := common.NewStdRole(r.Getid())
 		auth.NewRole(sr)
-		if len(mr.Permissions) == 0 {
+		if len(r.GetPermissions()) == 0 {
 			continue
 		}
 
-		permids := strings.Split(mr.Permissions, common.MongoRoleSep)
+		permids := strings.Split(r.GetPermissions(), common.MongoRoleSep)
 		perms, err := auth.GetPerms(permids)
 		if err != nil {
 			return err
@@ -56,31 +74,23 @@ func InitRole() error {
 	return nil
 }
 
-func InitUser() error {
-	mus := []models.User{}
-	uc := models.NewUserColl()
-	defer uc.Database.Session.Close()
-
-	var (
-		uid string
-		err error
-	)
-
-	if err = uc.Find(nil).All(&mus); err != nil {
+func initUser(up plugin.UserPools) error {
+	us, err := up.Gather()
+	if err != nil {
 		return err
 	}
+
 	auth := common.Get()
 
-	for _, mu := range mus {
-		uid = mu.Id.Hex()
-		auth.NewUser(uid)
+	for _, u := range us {
+		auth.NewUser(u.Getid())
 
-		if len(mu.Roles) == 0 {
+		if len(u.GetRoles()) == 0 {
 			continue
 		}
 
-		for _, rid := range strings.Split(mu.Roles, common.MongoRoleSep) {
-			err = auth.AddRole(uid, rid)
+		for _, rid := range strings.Split(u.GetRoles(), common.MongoRoleSep) {
+			err = auth.AddRole(u.Getid(), rid)
 			if err != nil {
 				return err
 			}
