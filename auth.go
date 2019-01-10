@@ -178,28 +178,34 @@ func Revoke(rid, pid string) (*services.Role, error) {
 func CreateUser(uid string) (*services.User, error) {
 	up := models.Get().GetUserPools()
 	rp := models.Get().GetRolePools()
+	pp := models.Get().GetPermissionPools()
+	defer pp.Close()
 	defer up.Close()
 	defer rp.Close()
+	defer pp.Close()
 
-	return services.CreateUser(uid, up, rp)
+	return services.CreateUser(uid, up, rp, pp)
 }
 
 func GetUser(id string) (*services.User, error) {
 	up := models.Get().GetUserPools()
 	rp := models.Get().GetRolePools()
+	pp := models.Get().GetPermissionPools()
 	defer up.Close()
 	defer rp.Close()
 
-	return services.GetUserById(id, up, rp)
+	return services.GetUserById(id, up, rp, pp)
 }
 
 func GetUserByUid(uid string) (*services.User, error) {
 	up := models.Get().GetUserPools()
 	rp := models.Get().GetRolePools()
+	pp := models.Get().GetPermissionPools()
+	defer pp.Close()
 	defer up.Close()
 	defer rp.Close()
 
-	return services.GetUserByUid(uid, up, rp)
+	return services.GetUserByUid(uid, up, rp, pp)
 }
 
 func AddRole(id, rid string) (*services.User, error) {
@@ -237,10 +243,12 @@ func AddRole(id, rid string) (*services.User, error) {
 
 	up := models.Get().GetUserPools()
 	rp := models.Get().GetRolePools()
+	pp := models.Get().GetPermissionPools()
+	defer pp.Close()
 	defer up.Close()
 	defer rp.Close()
 
-	u, err = services.UpdateUser(id, updateParams, up, rp)
+	u, err = services.UpdateUser(id, updateParams, up, rp, pp)
 	if err != nil {
 		return nil, err
 	}
@@ -289,10 +297,12 @@ func DelRole(id, rid string) (*services.User, error) {
 
 	up := models.Get().GetUserPools()
 	rp := models.Get().GetRolePools()
+	pp := models.Get().GetPermissionPools()
+	defer pp.Close()
 	defer up.Close()
 	defer rp.Close()
 
-	u, err = services.UpdateUser(id, updateParams, up, rp)
+	u, err = services.UpdateUser(id, updateParams, up, rp, pp)
 	if err != nil {
 		return nil, err
 	}
@@ -333,10 +343,12 @@ func GetAllRoles(skip, limit int, field string) ([]*services.Role, error) {
 func GetAllUsers(skip, limit int, field string) ([]*services.User, error) {
 	up := models.Get().GetUserPools()
 	rp := models.Get().GetRolePools()
+	pp := models.Get().GetPermissionPools()
+	defer pp.Close()
 	defer up.Close()
 	defer rp.Close()
 
-	return services.GetUsers(skip, limit, field, up, rp)
+	return services.GetUsers(skip, limit, field, up, rp, pp)
 }
 
 func GetPermByDesc(descrip string) (*services.Permission, error) {
